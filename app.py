@@ -360,117 +360,122 @@ div[data-testid="metric-container"] div[data-testid="metric-value"] {
 
 
 # ════════════════════════════════════════════════════════════
-# BUG FIX 1 — Per-product images using outfit_type + color
+# Per-product image system — unique image per outfit_id
 # ════════════════════════════════════════════════════════════
+# Uses outfit_id as a hash index into a per-type image pool.
+# Every product gets a stable, distinct image regardless of
+# how many products share the same outfit_type + color bucket.
 
-# Maps (outfit_type, dominant_color_group) → curated Unsplash photo ID
-# This gives DIFFERENT images per outfit type AND per color family
-# instead of the same static style-tag image for every card.
-
-COLOR_GROUP = {
-    'red': ['red','crimson','maroon','cherry','wine','ruby'],
-    'pink': ['pink','rose','blush','magenta','fuchsia'],
-    'orange': ['orange','coral','peach','rust','terracotta','saffron','apricot'],
-    'yellow': ['yellow','mustard','gold','lemon','butter','cream'],
-    'green': ['green','olive','emerald','mint','sage','teal','forest'],
-    'blue': ['blue','cobalt','navy','sky','indigo','royal blue','denim'],
-    'purple': ['purple','lavender','lilac','violet','plum','mauve'],
-    'white': ['white','ivory','off-white','cream','champagne','nude'],
-    'black': ['black','charcoal','onyx','jet'],
-    'grey': ['grey','gray','silver','ash'],
-    'brown': ['brown','camel','tan','beige','khaki','taupe'],
-    'multi': ['multi','printed','floral','geometric','abstract'],
+OUTFIT_IMAGE_POOLS = {
+    'kurta': [
+        'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=220&q=80',
+        'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=220&q=80',
+        'https://images.unsplash.com/photo-1594938298603-c8148c4b4f7e?w=220&q=80',
+        'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=220&q=80',
+        'https://images.unsplash.com/photo-1614093302611-8efc64349eba?w=220&q=80',
+        'https://images.unsplash.com/photo-1617627143233-b7f3c4f8e9f6?w=220&q=80',
+        'https://images.unsplash.com/photo-1602810316498-ab67cf68c8e1?w=220&q=80',
+    ],
+    'saree': [
+        'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=220&q=80',
+        'https://images.unsplash.com/photo-1594938298603-c8148c4b4f7e?w=220&q=80',
+        'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=220&q=80',
+        'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=220&q=80',
+        'https://images.unsplash.com/photo-1614093302611-8efc64349eba?w=220&q=80',
+        'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=220&q=80',
+    ],
+    'lehenga': [
+        'https://images.unsplash.com/photo-1614093302611-8efc64349eba?w=220&q=80',
+        'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=220&q=80',
+        'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=220&q=80',
+        'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=220&q=80',
+        'https://images.unsplash.com/photo-1594938298603-c8148c4b4f7e?w=220&q=80',
+    ],
+    'dress': [
+        'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=220&q=80',
+        'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=220&q=80',
+        'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=220&q=80',
+        'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=220&q=80',
+        'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=220&q=80',
+        'https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?w=220&q=80',
+        'https://images.unsplash.com/photo-1572804013427-4d7ca7268217?w=220&q=80',
+    ],
+    'formal_set': [
+        'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=220&q=80',
+        'https://images.unsplash.com/photo-1548690312-e3b507d8c110?w=220&q=80',
+        'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=220&q=80',
+        'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=220&q=80',
+        'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=220&q=80',
+    ],
+    'top_jeans': [
+        'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=220&q=80',
+        'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=220&q=80',
+        'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=220&q=80',
+        'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=220&q=80',
+        'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=220&q=80',
+        'https://images.unsplash.com/photo-1548690312-e3b507d8c110?w=220&q=80',
+    ],
+    'co_ord_set': [
+        'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=220&q=80',
+        'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=220&q=80',
+        'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=220&q=80',
+        'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=220&q=80',
+        'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=220&q=80',
+        'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=220&q=80',
+    ],
+    'jumpsuit': [
+        'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=220&q=80',
+        'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=220&q=80',
+        'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=220&q=80',
+        'https://images.unsplash.com/photo-1548690312-e3b507d8c110?w=220&q=80',
+        'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=220&q=80',
+    ],
+    'anarkali': [
+        'https://images.unsplash.com/photo-1614093302611-8efc64349eba?w=220&q=80',
+        'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=220&q=80',
+        'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=220&q=80',
+        'https://images.unsplash.com/photo-1594938298603-c8148c4b4f7e?w=220&q=80',
+        'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=220&q=80',
+    ],
+    'palazzo_set': [
+        'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=220&q=80',
+        'https://images.unsplash.com/photo-1614093302611-8efc64349eba?w=220&q=80',
+        'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=220&q=80',
+        'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=220&q=80',
+        'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=220&q=80',
+        'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=220&q=80',
+    ],
+    'shirt_trouser': [
+        'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=220&q=80',
+        'https://images.unsplash.com/photo-1548690312-e3b507d8c110?w=220&q=80',
+        'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=220&q=80',
+        'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=220&q=80',
+        'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=220&q=80',
+    ],
+    'maxi_dress': [
+        'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=220&q=80',
+        'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=220&q=80',
+        'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=220&q=80',
+        'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=220&q=80',
+        'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=220&q=80',
+        'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=220&q=80',
+    ],
 }
 
-# Outfit-type × color-group → Unsplash photo (free, no-auth)
-OUTFIT_IMAGES = {
-    'kurta': {
-        'orange':  'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=220&q=80',
-        'pink':    'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=220&q=80',
-        'blue':    'https://images.unsplash.com/photo-1594938298603-c8148c4b4f7e?w=220&q=80',
-        'green':   'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=220&q=80',
-        'yellow':  'https://images.unsplash.com/photo-1614093302611-8efc64349eba?w=220&q=80',
-        'default': 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=220&q=80',
-    },
-    'saree': {
-        'red':     'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=220&q=80',
-        'blue':    'https://images.unsplash.com/photo-1594938298603-c8148c4b4f7e?w=220&q=80',
-        'green':   'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=220&q=80',
-        'orange':  'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=220&q=80',
-        'default': 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=220&q=80',
-    },
-    'lehenga': {
-        'red':     'https://images.unsplash.com/photo-1614093302611-8efc64349eba?w=220&q=80',
-        'pink':    'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=220&q=80',
-        'blue':    'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=220&q=80',
-        'default': 'https://images.unsplash.com/photo-1614093302611-8efc64349eba?w=220&q=80',
-    },
-    'dress': {
-        'black':   'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=220&q=80',
-        'white':   'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=220&q=80',
-        'red':     'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=220&q=80',
-        'blue':    'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=220&q=80',
-        'green':   'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=220&q=80',
-        'default': 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=220&q=80',
-    },
-    'formal_set': {
-        'black':   'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=220&q=80',
-        'white':   'https://images.unsplash.com/photo-1548690312-e3b507d8c110?w=220&q=80',
-        'grey':    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=220&q=80',
-        'default': 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=220&q=80',
-    },
-    'top_jeans': {
-        'blue':    'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=220&q=80',
-        'white':   'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=220&q=80',
-        'black':   'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=220&q=80',
-        'default': 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=220&q=80',
-    },
-    'co_ord_set': {
-        'default': 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=220&q=80',
-        'white':   'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=220&q=80',
-        'black':   'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=220&q=80',
-    },
-    'jumpsuit': {
-        'default': 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=220&q=80',
-        'black':   'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=220&q=80',
-    },
-    'anarkali': {
-        'default': 'https://images.unsplash.com/photo-1614093302611-8efc64349eba?w=220&q=80',
-        'red':     'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=220&q=80',
-    },
-    'palazzo_set': {
-        'default': 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=220&q=80',
-    },
-    'shirt_trouser': {
-        'default': 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=220&q=80',
-        'white':   'https://images.unsplash.com/photo-1548690312-e3b507d8c110?w=220&q=80',
-    },
-    'maxi_dress': {
-        'default': 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=220&q=80',
-        'white':   'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=220&q=80',
-        'blue':    'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=220&q=80',
-    },
-}
+_FALLBACK_POOL = [
+    'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=220&q=80',
+    'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=220&q=80',
+    'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=220&q=80',
+]
 
-def get_outfit_image(outfit_type: str, color: str) -> str:
+def get_outfit_image(outfit_type: str, color: str, outfit_id: int = 0) -> str:
     """
-    BUG FIX: Returns a per-outfit-type image that ALSO varies by color.
-    Old code used style_tag → same image for all 6 cards.
-    New code uses outfit_type + color_group → different images per card.
+    Returns a stable, unique image URL per product.
+    Uses outfit_id as a hash index into the per-type image pool so every
+    product gets a distinct image, even within the same outfit_type + color bucket.
     """
-    color_lower = color.lower().strip()
-    # Find which color group this color belongs to
-    matched_group = 'default'
-    for group, keywords in COLOR_GROUP.items():
-        if any(kw in color_lower for kw in keywords):
-            matched_group = group
-            break
-
-    type_map = OUTFIT_IMAGES.get(outfit_type, {})
-    # Try color group first, fall back to default
-    return type_map.get(matched_group, type_map.get('default',
-        'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=220&q=80'
-    ))
+    pool = OUTFIT_IMAGE_POOLS.get(outfit_type, _FALLBACK_POOL)
+    return pool[int(outfit_id) % len(pool)]
 
 
 # ════════════════════════════════════════════════════════════
@@ -783,8 +788,8 @@ def main():
                     reviews = int(row['num_reviews'])
                     color = str(row['color'])
 
-                    # ── BUG FIX 1: per-product image ──────────
-                    img_url = get_outfit_image(row['outfit_type'], color)
+                    # per-product image: unique per outfit_id
+                    img_url = get_outfit_image(row['outfit_type'], color, row['outfit_id'])
 
                     st.markdown(f"""
                     <div class="outfit-card">
@@ -833,7 +838,7 @@ def main():
             if not price_matches.empty:
                 st.success(f"✦ {len(price_matches)} outfits found within ₹{min_p:,}–₹{max_p:,}")
                 for _, row in price_matches.head(5).iterrows():
-                    img_url = get_outfit_image(row['outfit_type'], str(row['color']))
+                    img_url = get_outfit_image(row['outfit_type'], str(row['color']), row['outfit_id'])
                     st.markdown(f"""
                     <div class="outfit-card">
                         <div class="outfit-img-wrap"><img src="{img_url}" /></div>
@@ -857,7 +862,7 @@ def main():
                 gap = abs(nearest_price - (max_p if nearest_price > max_p else min_p))
                 st.markdown(f'<div class="fallback-box">⚠ No exact match in ₹{min_p:,}–₹{max_p:,}. Showing nearest (₹{gap:,} outside budget).</div>', unsafe_allow_html=True)
                 for _, row in nearest.iterrows():
-                    img_url = get_outfit_image(row['outfit_type'], str(row['color']))
+                    img_url = get_outfit_image(row['outfit_type'], str(row['color']), row['outfit_id'])
                     st.markdown(f"""
                     <div class="outfit-card">
                         <div class="outfit-img-wrap"><img src="{img_url}" /></div>
