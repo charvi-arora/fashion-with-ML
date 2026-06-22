@@ -24,7 +24,7 @@ import streamlit as st
 from urllib.parse import quote
 
 # ── Project imports (UNCHANGED — same ML + logic as before) ──
-from models.outfit_model import User
+from outfit_model import User
 from utils.data_handler import load_data, encode_and_split, encode_user_input, FEATURE_COLS
 from utils.ml_engine import train_and_evaluate, get_feature_importance, save_model, predict_style
 from utils.learning_engine import initialise_online_model
